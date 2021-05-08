@@ -1,0 +1,97 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat May  8 19:13:17 2021
+
+@author: ASUS
+"""
+
+import cv2
+import mediapipe as mp
+import time
+
+
+
+
+class handdetector():
+    def __init__(self,mode = False, maxhands =2,detectionConf = 0.5, trackConfi = 0.5  ):
+
+        self.mode = mode
+        self.maxhands = maxhands
+        self.detectionConf = detectionConf
+        self.trackConfi = trackConfi
+        self.mphands = mp.solutions.hands
+        self.hands  = self.mphands.Hands(self.mode, self.maxhands, self.detectionConf, self.trackConfi
+                                         )
+        self.mpdraw = mp.solutions.drawing_utils
+
+
+
+    def findH (self,frame,draw = False):
+        imgrgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        self.result = self.hands.process(imgrgb)
+        if self.result.multi_hand_landmarks:
+            for res in self.result.multi_hand_landmarks:
+                if draw :
+                    self.mpdraw.draw_landmarks(frame, res, self.mphands.HAND_CONNECTIONS)
+        return frame
+
+         
+                #for id, lm in enumerate(res.landmark):
+                    #print(id, lm)
+                 #   h,w,c = frame.shape
+                 #   cx,cy = int(lm.x * w), int(lm.y * h)
+                 #   print(id, cx, cy)
+                 #   if id == 20 :
+                 #       cv2.circle(frame, (cx,cy), 5 , (255,80,0), cv2.FILLED)
+            
+        
+    def findpos(self, frame,handnumber = 0, draw = True ):
+            lanllist = []
+            
+            if self.result.multi_hand_landmarks:
+                myhand = self.result.multi_hand_landmarks[handnumber]
+                for id, lm in enumerate (myhand.landmark):
+                    h,w,c = frame.shape
+                    cx,cy = int(lm.x * w), int(lm.y * h)
+                    lanllist.append([id,cx,cy])
+                    if draw:
+                        cv2.circle(frame, (cx,cy) ,10, (10,100,100), 3, cv2.FILLED)
+            return lanllist
+
+
+
+def main():
+    
+    global lizz
+    lizz = []
+    pTime = 0
+    cTime = 0
+    cap = cv2.VideoCapture(0)
+    detector = handdetector()
+    while True:
+        ret,frame = cap.read()
+        
+        detector.findH(frame, draw = True)
+        lizz = detector.findpos(frame)
+        if lizz != 0:
+            print(lizz)
+        #print(result.multi_hand_landmarks)
+    
+        cTime = time.time()
+        fps = 1/(cTime-pTime)
+        pTime = cTime
+        
+        cv2.putText(frame, str(int(fps)), (10,70), cv2.FONT_HERSHEY_DUPLEX, 2,(255,0,255), 1)
+                
+                
+                
+                
+        cv2.imshow("Handtracking" , frame)
+        key = cv2.waitKey(1)
+        if key & 0xFF == ord('q'):
+            break
+    cv2.destroyAllWindows()
+    
+if __name__ == '__main__':
+    main()
+    
